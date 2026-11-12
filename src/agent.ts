@@ -73,6 +73,7 @@ export function runAgent(job: JobInput): AgentRun {
       category: e.category,
       source,
       receiptId: receipt.id,
+      miles: e.miles,
     }),
   );
 

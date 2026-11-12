@@ -11,6 +11,9 @@ export interface LedgerEntry {
   category: string;
   source: string; // e.g. "paypal:ORDER-ID" or "manual"
   receiptId?: string;
+  /** Business miles driven (mileage expenses only) — carried so the
+   *  dashboard's re-derived write-offs show the same miles as the run. */
+  miles?: number;
 }
 
 const DATA_DIR = join(projectRoot(), "data");

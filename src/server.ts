@@ -57,6 +57,9 @@ function state(): Record<string, unknown> {
       e.category === "tools"
         ? e.category
         : "other") as "wages" | "parts" | "mileage" | "meals" | "tools" | "other",
+      // Miles ride along from the ledger so the re-derived reason reads
+      // "24 miles logged", exactly like the terminal run.
+      miles: e.miles,
     }));
   const writeOffs = flagWriteOffs(expenses);
   return {
