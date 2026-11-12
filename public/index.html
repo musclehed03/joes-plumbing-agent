@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>[Your Business Name Here] — The Books</title>
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: system-ui, sans-serif; font-size: 1.125rem; line-height: 1.5; background: #101014; color: #f2f2f2; margin: 0; padding: 24px; }
+  /* Skip link: visible on keyboard focus only. */
+  .skip-link { position: absolute; left: -9999px; top: 0; background: #ffffff; color: #000000; padding: 10px 16px; font-weight: 700; z-index: 10; }
+  .skip-link:focus { left: 8px; top: 8px; }
+  :focus-visible { outline: 3px solid #ffffff; outline-offset: 2px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  p.sub { color: #c9c9d4; margin: 0 0 20px; }
+  .cards { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+  .card { background: #1c1c22; border-radius: 10px; padding: 14px 18px; min-width: 150px; }
+  .card .label { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #c9c9d4; }
+  .card .value { font-size: 1.5rem; font-weight: 700; margin-top: 4px; }
+  /* Color is decorative only — every card already names its value in text. */
+  .card .value.green { color: #4ade80; }
+  .card .value.amber { color: #fbbf24; }
+  h2 { font-size: 1.2rem; border-bottom: 1px solid #2a2a33; padding-bottom: 6px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid #232329; font-size: 1rem; }
+  th { color: #c9c9d4; font-weight: 600; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .reason { color: #c9c9d4; font-size: 0.95rem; }
+  .empty { color: #c9c9d4; }
+  code { background: #232329; padding: 1px 5px; border-radius: 4px; }
+  button { font: inherit; cursor: pointer; background: #1c1c22; color: #f2f2f2; border: 2px solid #c9c9d4; border-radius: 8px; padding: 8px 14px; margin-bottom: 20px; }
+  button:hover { background: #2a2a33; }
+  /* High contrast mode: pure black/white, stronger borders, no faint text. */
+  body.high-contrast { background: #000000; color: #ffffff; }
+  body.high-contrast .card, body.high-contrast button { background: #000000; border: 2px solid #ffffff; }
+  body.high-contrast .card .label, body.high-contrast p.sub, body.high-contrast th, body.high-contrast .reason, body.high-contrast .empty { color: #ffffff; }
+  body.high-contrast .card .value.green { color: #7dff9e; }
+  body.high-contrast .card .value.amber { color: #ffd75e; }
+  body.high-contrast :focus-visible { outline-color: #ffff00; }
+  @media (prefers-contrast: more) {
+    body { background: #000000; color: #ffffff; }
+    p.sub, .card .label, th, .reason, .empty { color: #ffffff; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to the books</a>
+<header>
+  <h1>🔧 [Your Business Name Here] — The Books</h1>
+  <p class="sub">Paid via PayPal, or recorded standalone with no PayPal account — booked by the agent. No QuickBooks, no year-end mess.</p>
+  <button id="contrast-toggle" type="button" aria-pressed="false">High contrast: off</button>
+</header>
+<main id="main">
+  <div class="cards" id="cards" aria-live="polite" aria-label="Book totals"></div>
+
+  <h2 id="receipts-heading">Receipts</h2>
+  <table aria-labelledby="receipts-heading">
+    <caption>Receipts filed by the agent, newest first in file order. Mode shows whether each came from PayPal or a standalone record.</caption>
+    <thead><tr><th scope="col">ID</th><th scope="col">Payer</th><th scope="col">Description</th><th scope="col">Order</th><th scope="col">Mode</th><th scope="col" style="text-align:right">Amount</th></tr></thead>
+    <tbody id="receipts"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+  </table>
+
+  <h2 id="ledger-heading">Ledger</h2>
+  <table aria-labelledby="ledger-heading">
+    <caption>Ledger entries: income in, job expenses out. Amounts are labeled with a plus or minus sign, never by color alone.</caption>
+    <thead><tr><th scope="col">Date</th><th scope="col">Label</th><th scope="col">Type</th><th scope="col" style="text-align:right">Amount</th></tr></thead>
+    <tbody id="ledger"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody>
+  </table>
+
+  <h2 id="writeoffs-heading">Write-offs flagged</h2>
+  <table aria-labelledby="writeoffs-heading">
+    <caption>Expenses flagged as deductible, with the plain-language reason for each. Deductible amounts are shown as text, never by color alone.</caption>
+    <thead><tr><th scope="col">Item</th><th scope="col" style="text-align:right">Amount</th><th scope="col" style="text-align:right">Deductible</th><th scope="col">Why</th></tr></thead>
+    <tbody id="writeoffs"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody>
+  </table>
+
+  <p class="sub">Demo bookkeeping, not tax advice. Run <code>npm run dev</code> to put a job through the PayPal flow, or <code>npm run dev:standalone</code> for the pop-out mode with no PayPal account.</p>
+</main>
+
+<script>
+(function () {
+  // High contrast toggle: persists in localStorage, respects prefers-contrast.
+  var toggle = document.getElementById('contrast-toggle');
+  var stored = null;
+  try { stored = localStorage.getItem('joes-plumbing-contrast'); } catch (e) { stored = null; }
+  var prefersMore = window.matchMedia && window.matchMedia('(prefers-contrast: more)').matches;
+  var on = stored === 'high' || (stored === null && prefersMore);
+  function apply() {
+    document.body.classList.toggle('high-contrast', on);
+    toggle.setAttribute('aria-pressed', String(on));
+    toggle.textContent = 'High contrast: ' + (on ? 'on' : 'off');
+  }
+  toggle.addEventListener('click', function () {
+    on = !on;
+    try { localStorage.setItem('joes-plumbing-contrast', on ? 'high' : 'standard'); } catch (e) {}
+    apply();
+  });
+  apply();
+})();
+
+async function load() {
+  const res = await fetch('/api/state');
+  const s = await res.json();
+
+  document.getElementById('cards').innerHTML = [
+    ['Income', s.totals.income, 'green'],
+    ['Expenses', s.totals.expenses, ''],
+    ['Balance', s.totals.balance, 'green'],
+    ['Deductible flagged', s.totals.deductible, 'amber'],
+  ].map(([label, value, cls]) =>
+    `<div class="card"><div class="label">${label}</div><div class="value ${cls}">${value}</div></div>`
+  ).join('');
+
+  const receipts = document.getElementById('receipts');
+  receipts.innerHTML = s.receipts.length ? s.receipts.map(r =>
+    `<tr><td><code>${r.id}</code></td><td>${r.payer}</td><td>${r.description}</td><td><code>${r.orderId}</code></td><td>${r.mode}</td><td class="num">${r.amountCents / 100 < 0 ? '-' : ''}$${Math.abs(r.amountCents / 100).toFixed(2)} ${r.currency}</td></tr>`
+  ).join('') : '<tr><td colspan="6" class="empty">No receipts yet — run <code>npm run dev</code> or <code>npm run dev:standalone</code>.</td></tr>';
+
+  const ledger = document.getElementById('ledger');
+  ledger.innerHTML = s.ledger.length ? s.ledger.map(e =>
+    `<tr><td>${new Date(e.date).toLocaleString()}</td><td>${e.label}</td><td>${e.type}</td><td class="num">${e.type === 'income' ? '+' : '−'}$${(e.amountCents / 100).toFixed(2)}</td></tr>`
+  ).join('') : '<tr><td colspan="4" class="empty">Ledger is empty.</td></tr>';
+
+  const wo = document.getElementById('writeoffs');
+  wo.innerHTML = s.writeOffs.length ? s.writeOffs.map(w =>
+    `<tr><td>${w.label}</td><td class="num">${w.amount}</td><td class="num">${w.deductible}</td><td class="reason">${w.reason}</td></tr>`
+  ).join('') : '<tr><td colspan="4" class="empty">Nothing flagged yet.</td></tr>';
+}
+load();
+</script>
+</body>
+</html>
