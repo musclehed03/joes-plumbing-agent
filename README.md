@@ -10,6 +10,12 @@ the agent does the rest: logs the receipt, balances the books, and flags
 write-offs — so a plumber never has to open QuickBooks or pay a $13,000
 year-end cleanup bill. No PayPal account is required to use it.
 
+## Demo video
+
+Built for the PayPal AI Hackathon 2026. Demo video (2:27).
+
+https://rumble.com/v7i946e-your-business-name-heres-agent-provided-by-paypal.html
+
 Demo example throughout: "Joe's Plumbing" — Javier fixes Stan's drains,
 Stan pays $185. Joe is an example only, not a real client.
 
